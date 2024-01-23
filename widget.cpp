@@ -5,7 +5,8 @@ Widget::Widget(QWidget *parent)
     : QWidget(parent)
 {
     BulletPieChart bpc;
-    bpc.getSellers();
+
+
 
 }
 

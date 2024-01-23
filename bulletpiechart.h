@@ -1,4 +1,4 @@
-#ifndef BULLETPIECHART_H
+﻿#ifndef BULLETPIECHART_H
 #define BULLETPIECHART_H
 
 #include <QObject>
@@ -7,6 +7,9 @@
 #include <QJsonObject>
 #include <QDebug>
 #include <QDate>
+#include <QtCharts/QChartView>
+#include <QtCharts/QPieSeries>
+
 
 class BulletPieChart : public QObject
 {
@@ -14,6 +17,8 @@ class BulletPieChart : public QObject
 private:
     QJsonDocument jsonDoc;
 public:
+
+
     explicit BulletPieChart(QObject *parent = nullptr);
     float gOtFS(QString seller);            //getOvertimeFromSeller
     float gSOt();                           //getSumOverTime
