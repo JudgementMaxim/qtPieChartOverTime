@@ -6,7 +6,7 @@ Widget::Widget(QWidget *parent)
 {
     BulletPieChart bpc;
 
-
+    qDebug() << bpc.gSOt();
 
 }
 

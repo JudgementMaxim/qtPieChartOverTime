@@ -1,10 +1,12 @@
 #include "bulletpiechart.h"
 #include <QFile>
 
+
+
 BulletPieChart::BulletPieChart(QObject *parent) : QObject(parent)
 {
     // Call the function to open the JSON file and store its content in jsonDoc
-    openJSON();
+
 }
 
 float BulletPieChart::gOtFS(QString seller)
@@ -138,4 +140,31 @@ QJsonDocument BulletPieChart::openJSON()
 
     // Return the parsed JSON document
     return jsonDoc;
+}
+
+void BulletPieChart::createBaseChart()
+{
+    float hours = 0;
+    //series->append();
+    QStringList sellers = getSellers();
+
+    for(QString seller: sellers){
+        hours = gOtFS(seller);
+        //series->append(seller,hours)
+        hours = 0;
+    }
+    //chart->addSeries(series)
+    //chart->setTitle("Overtime Hours per Person")
+}
+
+void BulletPieChart::creatIndividualChart(QString seller)
+{
+    float hours = 0;
+    for(int i = 0;i < 12;i++){
+        hours = gMOtFS(seller,i);
+        //series->append(hours,month)
+        hours = 0;
+    }
+    //chart->addSeries(series)
+    //chart->setTitle("Overtime Hours per Month for " + seller)
 }
