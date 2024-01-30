@@ -27,9 +27,10 @@ public:
     float gSOt();                           // getSumOverTime
     float gMOtFS(QString seller, int month); // getMonthlyOvertimeFromSeller
     QStringList getSellers();
+    void printSeriesContents(QPieSeries* series);
     QChart *createBaseChart();
+    QChart* creatIndividualChart(QString seller);
 
-    QChart* creatIndividualChart(QString seller,QString month);
 
     QJsonDocument openJSON();
 

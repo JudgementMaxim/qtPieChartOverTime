@@ -2,30 +2,41 @@
 #include "widget.h"
 #include "bulletpiechart.h"
 #include "form.h"
+#include <QVBoxLayout>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
 {
-    myForm = new Form(this);
+
 
     // Assuming you have a QChart object created in your BulletPieChart class
     BulletPieChart bpc;
-    QChart* chart = bpc.createBaseChart();
+    QChart* chart = bpc.creatIndividualChart("Jane Doe");
 
-    view = new QChartView(chart);
+    view = new QChartView(chart,this);
     applyBaseChart(); // Apply additional settings to the chart
 
-    view->setParent(myForm);
+    // Set parent for view
+
+
+
 }
 
 void Widget::applyBaseChart()
 {
+    view->chart()->setTitle(view->chart()->title());
+    view->chart()->legend()->setVisible(true);
 
-    QChart *chart = view->chart();
+    // Set size policy for the chart to expand in both directions
+    view->chart()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    chart->setTitle("My Chart");
 
-    chart->legend()->setVisible(true);
+}
+
+void Widget::resizeEvent(QResizeEvent *event)
+{
+    view->resize(size());
 }
 
 Widget::~Widget()

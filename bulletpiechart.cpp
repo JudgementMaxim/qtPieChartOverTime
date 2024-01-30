@@ -28,14 +28,14 @@ float BulletPieChart::gOtFS(QString seller)
         // Check if the current entry matches the specified seller
         if (sellerSearched == seller) {
             // Accumulate the working hours for the matched seller (converted to minutes)
-            qDebug() << "Minuten:" <<entry["Arbeitszeit"].toInt();
+            //qDebug() << "Minuten:" <<entry["Arbeitszeit"].toInt();
             overtimeTemp = entry["Arbeitszeit"].toInt();
             overtime += overtimeTemp;
-            qDebug() << overtime;
+            //qDebug() << overtime;
         } else {
             // This will return 0 on the first iteration if the seller doesn't match,
             // consider revising this logic based on your requirements
-            qDebug() <<  seller <<" Verkäufer nicht gefunden. " << sellerSearched << " Vergleichswert";
+            //qDebug() <<  seller <<" Verkäufer nicht gefunden. " << sellerSearched << " Vergleichswert";
         }
     }
     // Return the total accumulated overtime hours (converted to hours)
@@ -83,15 +83,15 @@ float BulletPieChart::gMOtFS(QString seller, int month)
             qDebug() << "Minuten:" <<entry["Arbeitszeit"].toInt();
             overtimeTemp = entry["Arbeitszeit"].toInt();
             overtime += overtimeTemp;
-            qDebug() << overtime;
+            //qDebug() << overtime;
         }else if(sellerSearched == seller) {
-            qDebug() << "Verkäufer " << seller << " gefunden aber nicht monat " << month;
+            //qDebug() << "Verkäufer " << seller << " gefunden aber nicht monat " << month;
         }
         else if(monthSearched == month) {
-            qDebug() << "Verkäufer " << seller << " nicht gefunden aber monat " << month;
+            //qDebug() << "Verkäufer " << seller << " nicht gefunden aber monat " << month;
         }
         else{
-            qDebug() << "Verkäufer " << seller << " nicht gefunden und nicht monat " << month;
+            //qDebug() << "Verkäufer " << seller << " nicht gefunden und nicht monat " << month;
         }
     }
 
@@ -151,33 +151,65 @@ QJsonDocument BulletPieChart::openJSON()
     return jsonDoc;
 }
 
-QChart* BulletPieChart::creatIndividualChart(QString seller, QString month)
+// ... (existing code)
+
+QChart* BulletPieChart::creatIndividualChart(QString seller)
 {
-    float hours = 0;
+    series->clear(); // Clear existing data in the series
+
     for (int i = 0; i < 12; i++) {
-        hours = gMOtFS(seller, i);
-        series->append(month, hours);
-        hours = 0;
+        float hours = gMOtFS(seller, i);
+        qDebug() << "Seller: " << seller << ", Month: " << i + 1 << ", Hours: " << hours; // Check data
+        series->append(QString::number(i + 1), hours); // Assuming month is represented by numbers 1 to 12
     }
+
     chart->addSeries(series);
     chart->setTitle("Overtime Hours per Month for " + seller);
 
     return chart;
 }
 
-QChart *BulletPieChart::createBaseChart()
+void BulletPieChart::printSeriesContents(QPieSeries* series) {
+    qDebug() << "Series Contents:";
+    for (const auto& slice : series->slices()) {
+        qDebug() << "Label:" << slice->label() << ", Value:" << slice->value();
+    }
+}
+
+QChart* BulletPieChart::createBaseChart()
 {
-    float hours = 0;
+    series->clear(); // Clear existing data in the series
+
     QStringList sellers = getSellers();
 
-    for(QString seller: sellers){
-        hours = gOtFS(seller);
-        series->append(seller,hours);
-        hours = 0;
+    int labelIndex = 0; // Counter for unique labels
+
+    for (const QString& seller : sellers) {
+        float hours = gOtFS(seller);
+        qDebug() << "Seller: " << seller << ", Hours: " << hours; // Check data
+
+        // Append slice with a unique label
+        series->append(seller, hours);
+        labelIndex++;
     }
+
+    printSeriesContents(series);
+    //aus irgendeinem grund wird immer die daten - 1 angezeigt
+    //und chart anzeigen klappt immernoch nicht
+    // Clear the existing chart
+    chart->removeAllSeries();
     chart->addSeries(series);
+
+    // Set up axes
+    chart->createDefaultAxes();
+
+    // Set chart title
     chart->setTitle("Overtime Hours per Person");
 
     return chart;
 }
+
+
+
+
 
