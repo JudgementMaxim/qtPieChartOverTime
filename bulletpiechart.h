@@ -17,19 +17,19 @@ class BulletPieChart : public QObject
 private:
     QJsonDocument jsonDoc;
 
-    void createBaseChart();
 
-    void creatIndividualChart(QString seller);
 public:
-//    QPieSeries *series = new QPieSeries();
-//    QChart *chart = new QChart();
-//    QChartView *view = new QChartView(chart);
+    QPieSeries *series = new QPieSeries();
+    QChart *chart = new QChart();
 
     explicit BulletPieChart(QObject *parent = nullptr);
     float gOtFS(QString seller);            // getOvertimeFromSeller
     float gSOt();                           // getSumOverTime
     float gMOtFS(QString seller, int month); // getMonthlyOvertimeFromSeller
     QStringList getSellers();
+    QChart *createBaseChart();
+
+    QChart* creatIndividualChart(QString seller,QString month);
 
     QJsonDocument openJSON();
 

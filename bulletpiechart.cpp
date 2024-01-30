@@ -1,12 +1,13 @@
 #include "bulletpiechart.h"
 #include <QFile>
+#include <QDir>
 
 
 
 BulletPieChart::BulletPieChart(QObject *parent) : QObject(parent)
 {
     // Call the function to open the JSON file and store its content in jsonDoc
-
+    openJSON();
 }
 
 float BulletPieChart::gOtFS(QString seller)
@@ -123,11 +124,19 @@ QStringList BulletPieChart::getSellers()
     return sellers;
 }
 
+
+
 QJsonDocument BulletPieChart::openJSON()
 {
     // Open the JSON file in read-only mode
     QFile dataJSON("datensaetze.json");
-    dataJSON.open(QIODevice::ReadOnly);
+
+    if (!dataJSON.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open JSON file. Error: " << dataJSON.errorString();
+        qDebug() << "Current Working Directory: " << QDir::currentPath();
+        // Handle the error or return an empty QJsonDocument
+        return QJsonDocument();
+    }
 
     // Read the contents of the file into a QByteArray
     QByteArray data = dataJSON.readAll();
@@ -142,29 +151,33 @@ QJsonDocument BulletPieChart::openJSON()
     return jsonDoc;
 }
 
-void BulletPieChart::createBaseChart()
+QChart* BulletPieChart::creatIndividualChart(QString seller, QString month)
 {
     float hours = 0;
-    //series->append();
+    for (int i = 0; i < 12; i++) {
+        hours = gMOtFS(seller, i);
+        series->append(month, hours);
+        hours = 0;
+    }
+    chart->addSeries(series);
+    chart->setTitle("Overtime Hours per Month for " + seller);
+
+    return chart;
+}
+
+QChart *BulletPieChart::createBaseChart()
+{
+    float hours = 0;
     QStringList sellers = getSellers();
 
     for(QString seller: sellers){
         hours = gOtFS(seller);
-        //series->append(seller,hours)
+        series->append(seller,hours);
         hours = 0;
     }
-    //chart->addSeries(series)
-    //chart->setTitle("Overtime Hours per Person")
+    chart->addSeries(series);
+    chart->setTitle("Overtime Hours per Person");
+
+    return chart;
 }
 
-void BulletPieChart::creatIndividualChart(QString seller)
-{
-    float hours = 0;
-    for(int i = 0;i < 12;i++){
-        hours = gMOtFS(seller,i);
-        //series->append(hours,month)
-        hours = 0;
-    }
-    //chart->addSeries(series)
-    //chart->setTitle("Overtime Hours per Month for " + seller)
-}

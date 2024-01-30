@@ -1,7 +1,10 @@
+// widget.h
 #ifndef WIDGET_H
 #define WIDGET_H
 
 #include <QWidget>
+#include "form.h"
+#include <QtCharts/QChartView>
 
 class Widget : public QWidget
 {
@@ -10,5 +13,12 @@ class Widget : public QWidget
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+
+    void applyBaseChart(); // No need to pass QChart as a parameter
+
+private:
+    Form *myForm;
+    QChartView *view;
 };
+
 #endif // WIDGET_H
