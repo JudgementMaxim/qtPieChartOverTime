@@ -10,17 +10,20 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QChart>  // Include QChart
+#include "filelogger.h"
 
 class BulletPieChart : public QObject
 {
     Q_OBJECT
 private:
     QJsonDocument jsonDoc;
+    FileLogger logger;
 
 
 public:
     QPieSeries *series = new QPieSeries();
     QChart *chart = new QChart();
+    QString filename = "bulletpiechart.cpp";
 
     explicit BulletPieChart(QObject *parent = nullptr);
     float gOtFS(QString seller);            // getOvertimeFromSeller

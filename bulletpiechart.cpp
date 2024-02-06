@@ -1,215 +1,169 @@
-#include "bulletpiechart.h"
-#include <QFile>
-#include <QDir>
+#include "bulletpiechart.h" // Einschließen der Header-Datei für die Definition der BulletPieChart-Klasse
+#include <QFile> // Einschließen der Header-Datei für die Datei-Ein-/Ausgabe
+#include <QDir> // Einschließen der Header-Datei für das Arbeiten mit Verzeichnissen
 
-
-
-BulletPieChart::BulletPieChart(QObject *parent) : QObject(parent)
+BulletPieChart::BulletPieChart(QObject *parent) : QObject(parent), logger("bulletpiechart.cpp")
 {
-    // Call the function to open the JSON file and store its content in jsonDoc
-    openJSON();
+    openJSON(); // Beim Erstellen eines BulletPieChart-Objekts wird die Methode openJSON() aufgerufen
 }
 
+// Methode zur Berechnung der Gesamtüberstunden eines Verkäufers
 float BulletPieChart::gOtFS(QString seller)
 {
-    // Retrieve the JSON document from the file
-    QJsonDocument jsonDoc = openJSON();
-    int overtime = 0;
-    int overtimeTemp;
+    QJsonDocument jsonDoc = openJSON(); // Öffnen der JSON-Datei und Laden des Inhalts
+    int overtime = 0; // Variable zur Speicherung der Überstunden
 
-    // Extract the array of entries from the JSON document
-    QJsonArray jsonArray = jsonDoc.array();
+    QJsonArray jsonArray = jsonDoc.array(); // Konvertierung des JSON-Dokuments in ein JSON-Array
 
-    // Iterate through each entry in the array
+    // Iteration durch jedes JSON-Objekt im Array
     for (const QJsonValue& sellersValue : jsonArray) {
-        QJsonObject entry = sellersValue.toObject();
-        QString sellerSearched = entry["Verkaeufer"].toString();
+        QJsonObject entry = sellersValue.toObject(); // Konvertierung des JSON-Werts in ein JSON-Objekt
+        QString sellerSearched = entry["Verkaeufer"].toString(); // Extrahieren des Verkäufers aus dem Eintrag
 
-        // Check if the current entry matches the specified seller
+        // Wenn der Verkäufer mit dem gesuchten Verkäufer übereinstimmt, werden die Überstunden addiert
         if (sellerSearched == seller) {
-            // Accumulate the working hours for the matched seller (converted to minutes)
-            //qDebug() << "Minuten:" <<entry["Arbeitszeit"].toInt();
-            overtimeTemp = entry["Arbeitszeit"].toInt();
-            overtime += overtimeTemp;
-            //qDebug() << overtime;
-        } else {
-            // This will return 0 on the first iteration if the seller doesn't match,
-            // consider revising this logic based on your requirements
-            //qDebug() <<  seller <<" Verkäufer nicht gefunden. " << sellerSearched << " Vergleichswert";
+            int overtimeTemp = entry["Arbeitszeit"].toInt(); // Extrahieren der Arbeitszeit aus dem Eintrag
+            overtime += overtimeTemp; // Addieren der Arbeitszeit zu den Überstunden
         }
     }
-    // Return the total accumulated overtime hours (converted to hours)
-    return overtime / 60.0;
+
+    return overtime / 60.0; // Rückgabe der Gesamtüberstunden in Stunden
 }
 
+// Methode zur Berechnung der Gesamtüberstunden aller Verkäufer
 float BulletPieChart::gSOt()
 {
-    int overtime = 0;
-    QJsonDocument jsonDoc = openJSON();
-    QJsonArray jsonArray = jsonDoc.array();
+    int overtime = 0; // Variable zur Speicherung der Gesamtüberstunden
+    QJsonDocument jsonDoc = openJSON(); // Öffnen der JSON-Datei und Laden des Inhalts
+    QJsonArray jsonArray = jsonDoc.array(); // Konvertierung des JSON-Dokuments in ein JSON-Array
 
-    // Iterate through each entry in the array
+    // Iteration durch jedes JSON-Objekt im Array
     for (const QJsonValue& sellersValue : jsonArray) {
-        QJsonObject entry = sellersValue.toObject();
-        int overtimeIndividual = entry["Arbeitszeit"].toInt();
-
-        // Sum up the individual overtime hours
-        overtime += overtimeIndividual;
+        QJsonObject entry = sellersValue.toObject(); // Konvertierung des JSON-Werts in ein JSON-Objekt
+        int overtimeIndividual = entry["Arbeitszeit"].toInt(); // Extrahieren der Arbeitszeit aus dem Eintrag
+        overtime += overtimeIndividual; // Addieren der Arbeitszeit zu den Gesamtüberstunden
     }
 
-    // Return the total overtime hours (converted to hours)
-    return overtime / 60.0;
+    return overtime / 60.0; // Rückgabe der Gesamtüberstunden in Stunden
 }
 
+// Methode zur Berechnung der Monatsüberstunden eines bestimmten Verkäufers
 float BulletPieChart::gMOtFS(QString seller, int month)
 {
-    int overtime = 0;
-    int overtimeTemp;
+    int overtime = 0; // Variable zur Speicherung der Monatsüberstunden
 
-    QJsonDocument jsonDoc = openJSON();
-    QJsonArray jsonArray = jsonDoc.array();
+    QJsonDocument jsonDoc = openJSON(); // Öffnen der JSON-Datei und Laden des Inhalts
+    QJsonArray jsonArray = jsonDoc.array(); // Konvertierung des JSON-Dokuments in ein JSON-Array
 
-    // Iterate through each entry in the array
+    // Iteration durch jedes JSON-Objekt im Array
     for (const QJsonValue& sellersValue : jsonArray) {
-        QJsonObject entry = sellersValue.toObject();
-        QString sellerSearched = entry["Verkaeufer"].toString();
-        QString dateString = entry["Datum"].toString();
-        QDate date = QDate::fromString(dateString, "yyyy-MM-dd");
-        int monthSearched = date.month();
+        QJsonObject entry = sellersValue.toObject(); // Konvertierung des JSON-Werts in ein JSON-Objekt
+        QString sellerSearched = entry["Verkaeufer"].toString(); // Extrahieren des Verkäufers aus dem Eintrag
+        QString dateString = entry["Datum"].toString(); // Extrahieren des Datums aus dem Eintrag
+        QDate date = QDate::fromString(dateString, "yyyy-MM-dd"); // Konvertierung des Datums in ein QDate-Objekt
+        int monthSearched = date.month(); // Extrahieren des Monats aus dem Datum
 
-        // Check if the current entry matches the specified seller and month
+        // Wenn der Verkäufer und der Monat übereinstimmen, werden die Überstunden addiert
         if (sellerSearched == seller && monthSearched == month) {
-            // Accumulate the working hours for the matched seller (converted to minutes)
-            qDebug() << "Minuten:" <<entry["Arbeitszeit"].toInt();
-            overtimeTemp = entry["Arbeitszeit"].toInt();
-            overtime += overtimeTemp;
-            //qDebug() << overtime;
-        }else if(sellerSearched == seller) {
-            //qDebug() << "Verkäufer " << seller << " gefunden aber nicht monat " << month;
-        }
-        else if(monthSearched == month) {
-            //qDebug() << "Verkäufer " << seller << " nicht gefunden aber monat " << month;
-        }
-        else{
-            //qDebug() << "Verkäufer " << seller << " nicht gefunden und nicht monat " << month;
+            int overtimeTemp = entry["Arbeitszeit"].toInt(); // Extrahieren der Arbeitszeit aus dem Eintrag
+            overtime += overtimeTemp; // Addieren der Arbeitszeit zu den Monatsüberstunden
         }
     }
 
-    // Return the total accumulated overtime hours for the specified seller and month (converted to hours)
-    return overtime / 60.0;
+    return overtime / 60.0; // Rückgabe der Monatsüberstunden in Stunden
 }
 
+// Methode zum Abrufen einer Liste aller Verkäufer
 QStringList BulletPieChart::getSellers()
 {
-    QStringList sellers;
+    QStringList sellers; // Liste zur Speicherung der Verkäufer
+    QJsonDocument jsonDoc = openJSON(); // Öffnen der JSON-Datei und Laden des Inhalts
+    QJsonArray jsonArray = jsonDoc.array(); // Konvertierung des JSON-Dokuments in ein JSON-Array
 
-    // Retrieve the JSON document from the file
-    QJsonDocument jsonDoc = openJSON();
-
-    // Extract the array of entries from the JSON document
-    QJsonArray jsonArray = jsonDoc.array();
-
-    // Iterate through each entry in the array
+    // Iteration durch jedes JSON-Objekt im Array
     for (const QJsonValue& sellersValue : jsonArray) {
-        QJsonObject entry = sellersValue.toObject();
-        QString sellerSearched = entry["Verkaeufer"].toString();
+        QJsonObject entry = sellersValue.toObject(); // Konvertierung des JSON-Werts in ein JSON-Objekt
+        QString sellerSearched = entry["Verkaeufer"].toString(); // Extrahieren des Verkäufers aus dem Eintrag
 
-        // Check if the seller is not already in the list before appending
+        // Wenn der Verkäufer noch nicht in der Liste enthalten ist, wird er hinzugefügt
         if (!sellers.contains(sellerSearched)) {
-            sellers.append(sellerSearched);
+            sellers.append(sellerSearched); // Hinzufügen des Verkäufers zur Liste
         }
     }
 
-    // Return the list of unique sellers
-    return sellers;
+    return sellers; // Rückgabe der Liste der Verkäufer
 }
 
-
-
+// Methode zum Öffnen der JSON-Datei und Laden des Inhalts
 QJsonDocument BulletPieChart::openJSON()
 {
-    // Open the JSON file in read-only mode
-    QFile dataJSON("datensaetze.json");
+    QFile dataJSON("datensaetze.json"); // Erstellen eines QFile-Objekts mit dem Dateinamen
 
+    // Überprüfen, ob die JSON-Datei erfolgreich geöffnet wurde
     if (!dataJSON.open(QIODevice::ReadOnly)) {
-        qDebug() << "Failed to open JSON file. Error: " << dataJSON.errorString();
-        qDebug() << "Current Working Directory: " << QDir::currentPath();
-        // Handle the error or return an empty QJsonDocument
-        return QJsonDocument();
+        logger.log("Failed to open JSON file. Error: " + dataJSON.errorString(),filename); // Fehlermeldung protokollieren
+        logger.log("Current Working Directory: " + QDir::currentPath(),filename); // Protokollieren des aktuellen Arbeitsverzeichnisses
+        return QJsonDocument(); // Rückgabe eines leeren JSON-Dokuments im Fehlerfall
     }
 
-    // Read the contents of the file into a QByteArray
-    QByteArray data = dataJSON.readAll();
+    QByteArray data = dataJSON.readAll(); // Lesen des gesamten Inhalts der Datei
+    jsonDoc = QJsonDocument::fromJson(data); // Konvertierung der Daten in ein JSON-Dokument
 
-    // Parse the JSON data into a QJsonDocument
-    jsonDoc = QJsonDocument::fromJson(data);
+    dataJSON.close(); // Schließen der Datei nach dem Lesen
 
-    // Close the JSON file
-    dataJSON.close();
-
-    // Return the parsed JSON document
-    return jsonDoc;
+    return jsonDoc; // Rückgabe des JSON-Dokuments
 }
 
-// ... (existing code)
-
+// Methode zum Erstellen eines Diagramms für die Überstunden eines bestimmten Verkäufers pro Monat
 QChart* BulletPieChart::creatIndividualChart(QString seller)
 {
-    series->clear(); // Clear existing data in the series
+    series->clear(); // Löschen der vorhandenen Datenreihen im Diagramm
 
+    // Iteration durch jeden Monat
     for (int i = 0; i < 12; i++) {
-        float hours = gMOtFS(seller, i);
-        qDebug() << "Seller: " << seller << ", Month: " << i + 1 << ", Hours: " << hours; // Check data
-        series->append(QString::number(i + 1), hours); // Assuming month is represented by numbers 1 to 12
+        float hours = gMOtFS(seller, i); // Abrufen der Monatsüberstunden für den Verkäufer
+        logger.log("Seller: " + seller + ", Month: " + QString::number(i + 1) + ", Hours: " + QString::number(hours),filename); // Protokollieren der Daten
+        series->append(QString::number(i + 1), hours); // Hinzufügen der Daten zur Datenreihe
     }
 
-    chart->addSeries(series);
-    chart->setTitle("Overtime Hours per Month for " + seller);
+    chart->addSeries(series); // Hinzufügen der Datenreihe zum Diagramm
+    chart->setTitle("Overtime Hours per Month for " + seller); // Festlegen des Diagrammtitels
 
-    return chart;
+    return chart; // Rückgabe des erstellten Diagramms
 }
 
+// Methode zum Protokollieren der Inhalte einer Datenreihe
 void BulletPieChart::printSeriesContents(QPieSeries* series) {
-    qDebug() << "Series Contents:";
+    logger.log("Series Contents:",filename); // Protokollieren der Überschrift
+
+    // Iteration durch jede Kuchenscheibe in der Datenreihe
     for (const auto& slice : series->slices()) {
-        qDebug() << "Label:" << slice->label() << ", Value:" << slice->value();
+        logger.log("Label: " + slice->label() + ", Value: " + QString::number(slice->value()),filename); // Protokollieren der Kuchenscheibe
     }
 }
 
+// Methode zum Erstellen eines Basisdiagramms für die Gesamtüberstunden pro Verkäufer
 QChart* BulletPieChart::createBaseChart()
 {
-    series->clear(); // Clear existing data in the series
+    series->clear(); // Löschen der vorhandenen Datenreihen im Diagramm
+    QStringList sellers = getSellers(); // Abrufen der Liste aller Verkäufer
+    int labelIndex = 0; // Index für die Etiketten im Diagramm
 
-    QStringList sellers = getSellers();
-
-    int labelIndex = 0; // Counter for unique labels
-
+    // Iteration durch jeden Verkäufer
     for (const QString& seller : sellers) {
-        float hours = gOtFS(seller);
-        qDebug() << "Seller: " << seller << ", Hours: " << hours; // Check data
+        float hours = gOtFS(seller); // Abrufen der Gesamtüberstunden für den Verkäufer
+        logger.log("Seller: " + seller + ", Hours: " + QString::number(hours),filename); // Protokollieren der Daten
 
-        // Append slice with a unique label
-        series->append(seller, hours);
-        labelIndex++;
+        series->append(seller, hours); // Hinzufügen der Daten zur Datenreihe
+        labelIndex++; // Inkrementieren des Index für die Etiketten
     }
 
-    printSeriesContents(series);
-    //aus irgendeinem grund wird immer die daten - 1 angezeigt
-    //und chart anzeigen klappt immernoch nicht
-    // Clear the existing chart
-    chart->removeAllSeries();
-    chart->addSeries(series);
+    printSeriesContents(series); // Protokollieren der Inhalte der Datenreihe
 
-    // Set up axes
-    chart->createDefaultAxes();
+    chart->removeAllSeries(); // Entfernen aller vorhandenen Datenreihen aus dem Diagramm
+    chart->addSeries(series); // Hinzufügen der Datenreihe zum Diagramm
+    chart->createDefaultAxes(); // Erstellen der Standardachsen
+    chart->setTitle("Overtime Hours per Person"); // Festlegen des Diagrammtitels
 
-    // Set chart title
-    chart->setTitle("Overtime Hours per Person");
-
-    return chart;
+    return chart; // Rückgabe des erstellten Diagramms
 }
-
-
-
-
-

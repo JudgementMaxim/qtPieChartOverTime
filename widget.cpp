@@ -1,83 +1,101 @@
-// widget.cpp
-#include "widget.h"
+#include "widget.h" // Inkludiere die Header-Datei für das Widget
+
+// Inkludiere notwendige Header-Dateien
 #include <QVBoxLayout>
 
+// Konstruktor für das Widget
 Widget::Widget(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent), view(nullptr), logger("logfile.txt") // Initialisiere Member-Variablen
 {
-    resize(400, 900);
+    resize(400, 900); // Setze die Größe des Widgets
 
-    // Assuming you have a QChart object created in your BulletPieChart class
+    // Erstelle ein Basisdiagramm (Base Pie Chart)
     QChart *chart = bpc.createBaseChart();
-    chart->setAnimationOptions(QChart::AllAnimations);
+    if (!chart) { // Überprüfe, ob das Diagramm erstellt wurde
+        logger.log("Error: Failed to create base chart.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
+    }
+    chart->setAnimationOptions(QChart::AllAnimations); // Setze die Animations-Optionen für das Diagramm
 
-    view = new QChartView(chart, this);
-    applyBaseChart(); // Apply additional settings to the chart
+    view = new QChartView(chart, this); // Erstelle eine Ansicht für das Diagramm
+    if (!view) { // Überprüfe, ob die Ansicht erstellt wurde
+        logger.log("Error: Failed to create chart view.", filename); // Logge einen Fehler
+        delete chart; // Lösche das Diagramm
+        return; // Beende die Funktion
+    }
+    applyBaseChart(chart); // Wende Basisdiagramm-Einstellungen an
 
+    // Verbinde das Signal für einen Klick auf ein Diagrammschnittstück mit der entsprechenden Funktion
     connect(static_cast<QPieSeries *>(chart->series().at(0)), &QPieSeries::clicked, this, &Widget::handleSliceClicked);
 }
 
-void Widget::applyBaseChart()
+// Funktion zum Anwenden von Einstellungen auf das Basisdiagramm
+void Widget::applyBaseChart(QChart *chart)
 {
-    view->chart()->setTitle(view->chart()->title());
-    view->chart()->legend()->setVisible(true);
+    if (!chart) { // Überprüfe, ob das Diagramm gültig ist
+        logger.log("Error: Invalid chart pointer.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
+    }
 
-    // Set size policy for the chart to expand in both directions
-    view->chart()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    // Wende Einstellungen auf das Diagramm an
+    chart->setTitle(chart->title());
+    chart->legend()->setVisible(true);
+    chart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
+// Funktion zur Behandlung eines Klicks auf ein Diagrammschnittstück
 void Widget::handleSliceClicked(QPieSlice *slice)
 {
-    // Slot to handle the clicked signal
-    if (slice) {
-        // Access information about the clicked slice
-        QString category = slice->label();
-        qreal value = slice->value();
-
-        // Print or use the information as needed
-        qDebug() << "Clicked on slice: " << category << ", Value: " << value;
-
-        // Clear the existing chart view
-        clearChartView(view);
-
-        // Create a new individual chart based on the clicked slice's category
-        QChart *individualChart = bpc.creatIndividualChart(category);
-        if (individualChart) {  // Check if the individual chart is valid
-            // Set the new chart to the view
-            view->setChart(individualChart);
-            applyBaseChart();
-            return;  // Exit the function to avoid potential issues
-        }
-
-        // Handle error conditions if the chart creation fails
-        qDebug() << "Error: Unable to create individual chart.";
+    if (!view || !slice) { // Überprüfe, ob die Ansicht und das Schnittstück gültig sind
+        logger.log("Error: Invalid view or slice pointer.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
     }
+
+    // Erhalte die Kategorie und den Wert des angeklickten Schnittstücks
+    QString category = slice->label();
+    qreal value = slice->value();
+
+    // Logge den Klick
+    logger.log("Clicked on slice: " + category + ", Value: " + QString::number(value), filename);
+
+    // Lösche die aktuelle Ansicht des Diagramms
+    clearChartView(view, logger);
+
+    // Erstelle ein individuelles Diagramm für die angeklickte Kategorie
+    QChart *individualChart = bpc.creatIndividualChart(category);
+
+    if (!individualChart) { // Überprüfe, ob das individuelle Diagramm erstellt wurde
+        logger.log("Error: Failed to create individual chart.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
+    }
+
+    view->setChart(individualChart); // Setze das individuelle Diagramm in die Ansicht ein
 }
 
-
-
+// Funktion zum Behandeln von Größenänderungsereignissen
 void Widget::resizeEvent(QResizeEvent *event)
 {
-    view->resize(size());
-}
-
-void Widget::clearChartView(QChartView *chartView)
-{
-    QChart *chart = chartView->chart();
-
-    // Remove all existing series from the chart
-    QList<QAbstractSeries *> allSeries = chart->series();
-    for (QAbstractSeries *series : allSeries)
-    {
-        chart->removeSeries(series);
-        delete series; // Optional, if you want to delete the series
+    if (!view) { // Überprüfe, ob die Ansicht gültig ist
+        logger.log("Error: Invalid view pointer.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
     }
+
+    view->resize(size()); // Passe die Größe der Ansicht an die Widget-Größe an
 }
 
+// Funktion zum Löschen aller Serien aus einem Diagramm
+void Widget::clearChartView(QChartView *chartView, FileLogger &logger)
+{
+    if (!chartView || !chartView->chart()) { // Überprüfe, ob die Ansicht und das Diagramm gültig sind
+        logger.log("Error: Invalid chart view or chart pointer.", filename); // Logge einen Fehler
+        return; // Beende die Funktion
+    }
+
+    chartView->chart()->removeAllSeries(); // Entferne alle Serien aus dem Diagramm
+}
+
+// Destruktor für das Widget
 Widget::~Widget()
 {
-    delete myForm;
-    // The QChartView and QChart are automatically deleted when myForm is deleted,
-    // since they are set as children of myForm.
+    delete myForm; // Lösche das Formular (myForm)
 }
