@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "form.h"
+#include "bulletpiechart.h"
 #include <QtCharts/QChartView>
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QChart>
@@ -20,9 +21,12 @@ public:
 private:
     Form *myForm;
     QChartView *view;
+    BulletPieChart bpc;
     void applyBaseChart();
+    static void clearChartView(QChartView *chartView);
 
-protected:
+private slots:
+    void handleSliceClicked(QPieSlice *slice);
 
 
     // QWidget interface
