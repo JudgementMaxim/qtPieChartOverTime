@@ -30,7 +30,7 @@ private:
     void applyBaseChart();
     void clearChartView(QChart *chart, FileLogger &logger); // Pass logger as a parameter
     FileLogger logger;
-
+    void createBaseChart();
 
 
 private slots:

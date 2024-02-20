@@ -1,6 +1,7 @@
 #include "widget.h"
 
 #include <QVBoxLayout>
+#include <QShortcut>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent), view(nullptr), logger("logfile.txt")
@@ -10,36 +11,7 @@ Widget::Widget(QWidget *parent)
 
     logger.log("Widget constructor called.", filename);
 
-    QPieSeries *series = new QPieSeries;
-    series = bpc.createBaseSeries();
-
-    QChart *chart = new QChart;
-    chart->addSeries(series);
-    if (!chart) {
-        logger.log("Error: Failed to create base chart.", filename);
-        return;
-    }
-    logger.log("Base chart created successfully.", filename);
-
-    chart->setAnimationOptions(QChart::AllAnimations);
-
-    view = new QChartView(chart, this);
-    if (!view) {
-        logger.log("Error: Failed to create chart view.", filename);
-        delete chart;
-        return;
-    }
-    logger.log("Chart view created successfully.", filename);
-
-    applyBaseChart(chart);
-
-    view->setRenderHint(QPainter::Antialiasing);
-
-    connect(series, &QPieSeries::clicked, this, &Widget::handleSliceClicked);
-    connect(series, &QPieSeries::hovered, this, &Widget::handleSliceHovered);
-
-
-
+    createBaseChart();
 
     logger.log("Widget constructor completed.", filename);
 }
@@ -89,6 +61,7 @@ void Widget::handleSliceClicked(QPieSlice *slice)
     }
     connect(individualSeries, &QPieSeries::hovered, this, &Widget::handleSliceHovered);
 
+
     logger.log("New series added to the chart.", filename);
 }
 
@@ -128,6 +101,37 @@ void Widget::clearChartView(QChart *chart)
     }
 
     logger.log("Chart view cleared.", filename);
+}
+
+void Widget::createBaseChart()
+{
+    QPieSeries *series = new QPieSeries;
+    series = bpc.createBaseSeries();
+
+    QChart *chart = new QChart;
+    chart->addSeries(series);
+    if (!chart) {
+        logger.log("Error: Failed to create base chart.", filename);
+        return;
+    }
+    logger.log("Base chart created successfully.", filename);
+
+    chart->setAnimationOptions(QChart::AllAnimations);
+
+    view = new QChartView(chart, this);
+    if (!view) {
+        logger.log("Error: Failed to create chart view.", filename);
+        delete chart;
+        return;
+    }
+    logger.log("Chart view created successfully.", filename);
+
+    applyBaseChart(chart);
+
+    view->setRenderHint(QPainter::Antialiasing);
+
+    connect(series, &QPieSeries::clicked, this, &Widget::handleSliceClicked);
+    connect(series, &QPieSeries::hovered, this, &Widget::handleSliceHovered);
 }
 
 Widget::~Widget()

@@ -129,9 +129,11 @@ QPieSeries* BulletPieChart::creatIndividualSeries(QString seller)
         float hours = gMOtFS(seller, i); // Abrufen der Monatsüberstunden für den Verkäufer
         logger.log("Seller: " + seller + ", Month: " + QString::number(i) + ", Hours: " + QString::number(hours),filename); // Protokollieren der Daten
         qDebug() << i;
-        series->append(months[i-1], hours); // Hinzufügen der Daten zur Datenreihe
-        qDebug() << i;
-        logger.log("Appended data",filename);
+        if(hours != 0){
+            series->append(months[i-1], hours); // Hinzufügen der Daten zur Datenreihe
+            qDebug() << i;
+            logger.log("Appended data",filename);
+        }
     }
 
     logger.log("Series erstellt",filename);
