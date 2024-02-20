@@ -1,101 +1,137 @@
-#include "widget.h" // Inkludiere die Header-Datei für das Widget
+#include "widget.h"
 
-// Inkludiere notwendige Header-Dateien
 #include <QVBoxLayout>
 
-// Konstruktor für das Widget
 Widget::Widget(QWidget *parent)
-    : QWidget(parent), view(nullptr), logger("logfile.txt") // Initialisiere Member-Variablen
+    : QWidget(parent), view(nullptr), logger("logfile.txt")
 {
-    resize(400, 900); // Setze die Größe des Widgets
+    resize(400, 900);
+    setWindowTitle("Kuchendiagram");
 
-    // Erstelle ein Basisdiagramm (Base Pie Chart)
-    QChart *chart = bpc.createBaseChart();
-    if (!chart) { // Überprüfe, ob das Diagramm erstellt wurde
-        logger.log("Error: Failed to create base chart.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    logger.log("Widget constructor called.", filename);
+
+    QPieSeries *series = new QPieSeries;
+    series = bpc.createBaseSeries();
+
+    QChart *chart = new QChart;
+    chart->addSeries(series);
+    if (!chart) {
+        logger.log("Error: Failed to create base chart.", filename);
+        return;
     }
-    chart->setAnimationOptions(QChart::AllAnimations); // Setze die Animations-Optionen für das Diagramm
+    logger.log("Base chart created successfully.", filename);
 
-    view = new QChartView(chart, this); // Erstelle eine Ansicht für das Diagramm
-    if (!view) { // Überprüfe, ob die Ansicht erstellt wurde
-        logger.log("Error: Failed to create chart view.", filename); // Logge einen Fehler
-        delete chart; // Lösche das Diagramm
-        return; // Beende die Funktion
+    chart->setAnimationOptions(QChart::AllAnimations);
+
+    view = new QChartView(chart, this);
+    if (!view) {
+        logger.log("Error: Failed to create chart view.", filename);
+        delete chart;
+        return;
     }
-    applyBaseChart(chart); // Wende Basisdiagramm-Einstellungen an
+    logger.log("Chart view created successfully.", filename);
 
-    // Verbinde das Signal für einen Klick auf ein Diagrammschnittstück mit der entsprechenden Funktion
-    connect(static_cast<QPieSeries *>(chart->series().at(0)), &QPieSeries::clicked, this, &Widget::handleSliceClicked);
+    applyBaseChart(chart);
+
+    view->setRenderHint(QPainter::Antialiasing);
+
+    connect(series, &QPieSeries::clicked, this, &Widget::handleSliceClicked);
+    connect(series, &QPieSeries::hovered, this, &Widget::handleSliceHovered);
+
+
+
+
+    logger.log("Widget constructor completed.", filename);
 }
 
-// Funktion zum Anwenden von Einstellungen auf das Basisdiagramm
 void Widget::applyBaseChart(QChart *chart)
 {
-    if (!chart) { // Überprüfe, ob das Diagramm gültig ist
-        logger.log("Error: Invalid chart pointer.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    if (!chart) {
+        logger.log("Error: Invalid chart pointer in applyBaseChart().", filename);
+        return;
     }
 
-    // Wende Einstellungen auf das Diagramm an
+    logger.log("Applying settings to the base chart.", filename);
+
     chart->setTitle(chart->title());
     chart->legend()->setVisible(true);
     chart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
-// Funktion zur Behandlung eines Klicks auf ein Diagrammschnittstück
 void Widget::handleSliceClicked(QPieSlice *slice)
 {
-    if (!view || !slice) { // Überprüfe, ob die Ansicht und das Schnittstück gültig sind
-        logger.log("Error: Invalid view or slice pointer.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    if (!view || !slice) {
+        logger.log("Error: Invalid view or slice pointer in handleSliceClicked().", filename);
+        return;
     }
 
-    // Erhalte die Kategorie und den Wert des angeklickten Schnittstücks
     QString category = slice->label();
     qreal value = slice->value();
 
-    // Logge den Klick
     logger.log("Clicked on slice: " + category + ", Value: " + QString::number(value), filename);
 
-    // Lösche die aktuelle Ansicht des Diagramms
-    clearChartView(view, logger);
+    clearChartView(view->chart());
 
-    // Erstelle ein individuelles Diagramm für die angeklickte Kategorie
-    QChart *individualChart = bpc.creatIndividualChart(category);
+    logger.log("Creating individual chart for category: " + category, filename);
+    QPieSeries *individualSeries = new QPieSeries;
+    individualSeries = bpc.creatIndividualSeries(category);
 
-    if (!individualChart) { // Überprüfe, ob das individuelle Diagramm erstellt wurde
-        logger.log("Error: Failed to create individual chart.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    QChart *individualChart = new QChart;
+    individualChart->addSeries(individualSeries);
+    if (!individualChart) {
+        logger.log("Error: Failed to create individual chart.", filename);
+        return;
     }
 
-    view->setChart(individualChart); // Setze das individuelle Diagramm in die Ansicht ein
+    QList<QAbstractSeries*> seriesList = individualChart->series();
+    for (QAbstractSeries *series : seriesList) {
+        view->chart()->addSeries(series);
+    }
+    connect(individualSeries, &QPieSeries::hovered, this, &Widget::handleSliceHovered);
+
+    logger.log("New series added to the chart.", filename);
 }
 
-// Funktion zum Behandeln von Größenänderungsereignissen
+void Widget::handleSliceHovered(QPieSlice *slice)
+{
+    slice->setExploded(!slice->isExploded());
+    slice->setLabelVisible(!slice->isLabelVisible());
+}
+
+
+
 void Widget::resizeEvent(QResizeEvent *event)
 {
-    if (!view) { // Überprüfe, ob die Ansicht gültig ist
-        logger.log("Error: Invalid view pointer.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    if (!view) {
+        logger.log("Error: Invalid view pointer in resizeEvent().", filename);
+        return;
     }
 
-    view->resize(size()); // Passe die Größe der Ansicht an die Widget-Größe an
+    logger.log("Resizing event triggered.", filename);
+
+    view->resize(size());
 }
 
-// Funktion zum Löschen aller Serien aus einem Diagramm
-void Widget::clearChartView(QChartView *chartView, FileLogger &logger)
+void Widget::clearChartView(QChart *chart)
 {
-    if (!chartView || !chartView->chart()) { // Überprüfe, ob die Ansicht und das Diagramm gültig sind
-        logger.log("Error: Invalid chart view or chart pointer.", filename); // Logge einen Fehler
-        return; // Beende die Funktion
+    if (!chart) {
+        logger.log("Error: Invalid chart pointer in clearChartView().", filename);
+        return;
     }
 
-    chartView->chart()->removeAllSeries(); // Entferne alle Serien aus dem Diagramm
+    logger.log("Clearing chart view...", filename);
+
+    QList<QAbstractSeries*> seriesList = chart->series();
+    for (QAbstractSeries *series : seriesList) {
+        chart->removeSeries(series);
+        delete series;
+    }
+
+    logger.log("Chart view cleared.", filename);
 }
 
-// Destruktor für das Widget
 Widget::~Widget()
 {
-    delete myForm; // Lösche das Formular (myForm)
+    logger.log("Widget destructor called.", filename);
+    delete myForm;
 }

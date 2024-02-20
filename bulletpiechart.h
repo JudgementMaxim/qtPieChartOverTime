@@ -31,12 +31,12 @@ public:
     float gMOtFS(QString seller, int month); // getMonthlyOvertimeFromSeller
     QStringList getSellers();
     void printSeriesContents(QPieSeries* series);
-    QChart *createBaseChart();
-    QChart* creatIndividualChart(QString seller);
+    QPieSeries* creatIndividualSeries(QString seller);
 
 
     QJsonDocument openJSON();
 
+    QPieSeries *createBaseSeries();
 signals:
 };
 

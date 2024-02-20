@@ -1,6 +1,7 @@
 #include "bulletpiechart.h" // Einschließen der Header-Datei für die Definition der BulletPieChart-Klasse
 #include <QFile> // Einschließen der Header-Datei für die Datei-Ein-/Ausgabe
 #include <QDir> // Einschließen der Header-Datei für das Arbeiten mit Verzeichnissen
+#include <QVector2D>
 
 BulletPieChart::BulletPieChart(QObject *parent) : QObject(parent), logger("bulletpiechart.cpp")
 {
@@ -54,9 +55,11 @@ float BulletPieChart::gMOtFS(QString seller, int month)
 
     QJsonDocument jsonDoc = openJSON(); // Öffnen der JSON-Datei und Laden des Inhalts
     QJsonArray jsonArray = jsonDoc.array(); // Konvertierung des JSON-Dokuments in ein JSON-Array
+    logger.log("Current month: " + QString::number(month), filename);
 
     // Iteration durch jedes JSON-Objekt im Array
     for (const QJsonValue& sellersValue : jsonArray) {
+
         QJsonObject entry = sellersValue.toObject(); // Konvertierung des JSON-Werts in ein JSON-Objekt
         QString sellerSearched = entry["Verkaeufer"].toString(); // Extrahieren des Verkäufers aus dem Eintrag
         QString dateString = entry["Datum"].toString(); // Extrahieren des Datums aus dem Eintrag
@@ -69,6 +72,7 @@ float BulletPieChart::gMOtFS(QString seller, int month)
             overtime += overtimeTemp; // Addieren der Arbeitszeit zu den Monatsüberstunden
         }
     }
+    logger.log("Itterated through sellers",filename);
 
     return overtime / 60.0; // Rückgabe der Monatsüberstunden in Stunden
 }
@@ -115,22 +119,27 @@ QJsonDocument BulletPieChart::openJSON()
 }
 
 // Methode zum Erstellen eines Diagramms für die Überstunden eines bestimmten Verkäufers pro Monat
-QChart* BulletPieChart::creatIndividualChart(QString seller)
+QPieSeries* BulletPieChart::creatIndividualSeries(QString seller)
 {
-    series->clear(); // Löschen der vorhandenen Datenreihen im Diagramm
+    QPieSeries *series = new QPieSeries; // Initialize the series pointer
+    QVector months = {"Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"};
 
     // Iteration durch jeden Monat
-    for (int i = 0; i < 12; i++) {
+    for (int i = 1; i <= 12; i++) {
         float hours = gMOtFS(seller, i); // Abrufen der Monatsüberstunden für den Verkäufer
-        logger.log("Seller: " + seller + ", Month: " + QString::number(i + 1) + ", Hours: " + QString::number(hours),filename); // Protokollieren der Daten
-        series->append(QString::number(i + 1), hours); // Hinzufügen der Daten zur Datenreihe
+        logger.log("Seller: " + seller + ", Month: " + QString::number(i) + ", Hours: " + QString::number(hours),filename); // Protokollieren der Daten
+        qDebug() << i;
+        series->append(months[i-1], hours); // Hinzufügen der Daten zur Datenreihe
+        qDebug() << i;
+        logger.log("Appended data",filename);
     }
 
-    chart->addSeries(series); // Hinzufügen der Datenreihe zum Diagramm
-    chart->setTitle("Overtime Hours per Month for " + seller); // Festlegen des Diagrammtitels
+    logger.log("Series erstellt",filename);
 
-    return chart; // Rückgabe des erstellten Diagramms
+
+    return series; // Rückgabe des erstellten Diagramms
 }
+
 
 // Methode zum Protokollieren der Inhalte einer Datenreihe
 void BulletPieChart::printSeriesContents(QPieSeries* series) {
@@ -143,7 +152,7 @@ void BulletPieChart::printSeriesContents(QPieSeries* series) {
 }
 
 // Methode zum Erstellen eines Basisdiagramms für die Gesamtüberstunden pro Verkäufer
-QChart* BulletPieChart::createBaseChart()
+QPieSeries* BulletPieChart::createBaseSeries()
 {
     series->clear(); // Löschen der vorhandenen Datenreihen im Diagramm
     QStringList sellers = getSellers(); // Abrufen der Liste aller Verkäufer
@@ -158,12 +167,7 @@ QChart* BulletPieChart::createBaseChart()
         labelIndex++; // Inkrementieren des Index für die Etiketten
     }
 
-    printSeriesContents(series); // Protokollieren der Inhalte der Datenreihe
 
-    chart->removeAllSeries(); // Entfernen aller vorhandenen Datenreihen aus dem Diagramm
-    chart->addSeries(series); // Hinzufügen der Datenreihe zum Diagramm
-    chart->createDefaultAxes(); // Erstellen der Standardachsen
-    chart->setTitle("Overtime Hours per Person"); // Festlegen des Diagrammtitels
 
-    return chart; // Rückgabe des erstellten Diagramms
+    return series; // Rückgabe des erstellten Diagramms
 }

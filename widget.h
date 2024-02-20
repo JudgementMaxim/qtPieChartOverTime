@@ -21,17 +21,22 @@ public:
 
     ~Widget();
 
+    void clearChartView(QChart *chart);
 private:
     Form *myForm;
     QChartView *view;
     BulletPieChart bpc;
     QString filename = "widget.cpp";
     void applyBaseChart();
-    void clearChartView(QChartView *chartView, FileLogger &logger); // Pass logger as a parameter
+    void clearChartView(QChart *chart, FileLogger &logger); // Pass logger as a parameter
     FileLogger logger;
+
+
 
 private slots:
     void handleSliceClicked(QPieSlice *slice);
+    void handleSliceHovered(QPieSlice *slice);
+
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
